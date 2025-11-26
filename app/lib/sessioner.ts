@@ -2,7 +2,7 @@ import { SessionOptions } from "iron-session";
 import { Types } from "mongoose";
 
 export interface SessionData {
-    username?: string;
+    email?: string;
     isPro?: boolean;
     isLoggedIn?: boolean;
     role?: string;

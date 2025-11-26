@@ -2,15 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { ethers } from "ethers";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "react-toastify";
 import { useModal } from "@/app/hooks/use-modal-store";
+import { HandleCredentialSignin } from "@/app/lib/actions";
 
 export type AuthPayload = {
   email?: string;
   password?: string;
   metaAddress?: string | null;
   signature?: string | null;
+  firstTime?: boolean;
 };
 
 const AuthUserModel = () => {
@@ -25,7 +27,7 @@ const AuthUserModel = () => {
   // form fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
+  const [firstTime, setFirstTime] = useState(false);
 
   // -----------------------
   // EMAIL + PASSWORD LOGIN
@@ -38,21 +40,20 @@ const AuthUserModel = () => {
       password,
       metaAddress: null,
       signature: null,
+      firstTime
     };
 
     try {
+      const res = await HandleCredentialSignin(payload);
 
-      console.log(payload)
-
-      // if (res.status === "success") {
-      //   router.push("/profile");
-      //   onClose();
-      //   router.refresh();
-      // } else {
-      //   toast("Invalid email or password");
-      // }
-
-
+      if (res.status === "success") {
+        // router.push("/profile");
+        toast("Login successful");
+        onClose();
+        router.refresh();
+      } else {
+        toast("Invalid email or password");
+      }
     } catch (err) {
       toast("Error logging in");
     }
@@ -80,9 +81,10 @@ const AuthUserModel = () => {
         password: null,
         metaAddress: address,
         signature,
+        firstTime
       };
 
-      console.log(payload)
+      console.log(payload);
 
       // if (res.status === "success") {
       //   router.push("/profile");
@@ -158,6 +160,17 @@ const AuthUserModel = () => {
               required
             />
 
+            <label htmlFor="firstTime">
+              <input
+                type="checkbox"
+                id="firstTime"
+                className="mr-2"
+                checked={firstTime}
+                onChange={(e) => setFirstTime(e.target.checked)}
+              />
+              First time user
+            </label>
+
             <button
               type="submit"
               className="bg-black text-white py-2 rounded-md text-sm"
@@ -176,13 +189,23 @@ const AuthUserModel = () => {
               Sign in by proving ownership of your MetaMask wallet.
             </div>
 
+            <label htmlFor="firstTime">
+              <input
+                type="checkbox"
+                id="firstTime"
+                className="mr-2"
+                checked={firstTime}
+                onChange={(e) => setFirstTime(e.target.checked)}
+              />
+              First time user
+            </label>
+
             <button
               onClick={handleWalletLogin}
               className="bg-orange-500 text-white py-2 rounded-md text-sm hover:bg-orange-600"
             >
               Connect & Sign Message
             </button>
-
           </div>
         )}
 

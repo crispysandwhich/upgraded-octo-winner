@@ -1,16 +1,27 @@
 "use client";
 import Link from "next/link";
 import { useModal } from "../hooks/use-modal-store";
+import { useEffect, useState } from "react";
+import { logout } from "../lib/actions";
 
-const MainHeader = () => {
+interface MainHeaderProps {
+  userData: any;
+  version:any;
+}
+
+const MainHeader = ({ userData, version }: MainHeaderProps) => {
+  const [currentSession, setCurrentSession] = useState(JSON.parse(userData));
   const { onOpen } = useModal();
+
+
+  useEffect(() => {
+    setCurrentSession(JSON.parse(userData));
+  },[version])
 
   const HandleAuthentication = () => {
     console.log("opening AuthModal");
     onOpen("AuthUser");
   };
-
-  const isLoggedIn = true;
 
   return (
     <header className="w-full mx-auto max-w-5xl px-4 sm:px-6 py-3 rounded-xl bg-white/6 backdrop-blur-sm shadow-sm">
@@ -29,20 +40,28 @@ const MainHeader = () => {
             Blogs
           </Link>
 
-          <button
-            onClick={HandleAuthentication}
-            aria-label="Authenticate"
-            className="inline-flex items-center text-sm sm:text-base px-3 py-2 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-          >
-            Authenticate
-          </button>
+          {currentSession?.isLoggedIn ? (
+            <button
+              onClick={logout}
+              aria-label="Logout"
+              className="inline-flex items-center text-sm sm:text-base px-3 py-2 bg-red-600 text-white rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+            >
+              Logout
+            </button>
+          ) : (
+            <button
+              onClick={HandleAuthentication}
+              aria-label="Authenticate"
+              className="inline-flex items-center text-sm sm:text-base px-3 py-2 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+            >
+              Authenticate
+            </button>
+          )}
         </nav>
       </div>
-      {isLoggedIn && (
+      {currentSession?.isLoggedIn && (
         <div className="flex items-center justify-between gap-4 text-sm mt-4">
-          <h2 className="font-semibold tracking-tight ">
-            hello admin
-          </h2>
+          <h2 className="font-semibold tracking-tight ">hello admin</h2>
           <nav>
             <Link href="/blogs/create">Create Blog</Link>
           </nav>

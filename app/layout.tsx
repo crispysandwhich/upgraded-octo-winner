@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
-import MainHeader from "./components/MainHeader";
 import { ModalProvider } from "./providers/model-provider";
 import { ToastContainer } from "react-toastify";
+import SessionHeader from "./components/SessionHeader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
-
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -21,12 +20,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} antialiased`}
-      >
-        <MainHeader />
+      <body className={`${geistSans.variable} antialiased`}>
+        <SessionHeader />
         {children}
         <ModalProvider />
         <ToastContainer />
@@ -34,4 +32,3 @@ export default function RootLayout({
     </html>
   );
 }
- 
