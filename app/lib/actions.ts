@@ -8,7 +8,6 @@ import dbConnect from "./db";
 import { User } from "@/models/User";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
-import { Blog } from "@/models/Blog";
 
 export const getSession = async () => {
   const cookieStore = await cookies();
@@ -90,16 +89,49 @@ export const HandleCredentialSignin = async (payload: any) => {
   }
 };
 
-export const HandleCreateBlog = async () => {
+export const HandleWalletSignin = async (payload) => {
+  const metaAddress = payload.metaAddress;
+  const firstTime = payload.firstTime;
+  const signature = payload.signature;
+  const usersession = await getSession();
   try {
     await dbConnect();
 
-    const newBlog = new Blog({
-      title: "testTest",
-    });
+    const currentUser = await User.find({ sig: signature }).lean();
 
-    await newBlog.save();
+    if (currentUser.length === 0 && firstTime) {
+      const newUser = new User({
+        metaAddress,
+        sig: signature,
+      });
+
+      usersession.isLoggedIn = true;
+      usersession.userId = newUser._id.toString();
+      usersession.role = newUser.role;
+      usersession.metaAddress = metaAddress;
+
+      await newUser.save();
+      await usersession.save();
+
+      revalidatePath("/");
+      return { status: "success", message: "User created successfully" };
+    }
+
+    const ValidSig = currentUser[0].sig === signature;
+
+    if (!ValidSig) {
+      return { status: "error", message: "Invalid wallet" };
+    }
+
+    usersession.isLoggedIn = true;
+    usersession.userId = currentUser[0]._id.toString();
+    usersession.role = currentUser[0].role;
+    usersession.metaAddress = metaAddress;
+    await usersession.save();
+    revalidatePath("/");
+    return { status: "success", message: "User logged in successfully" };
   } catch (error) {
-    console.log("Error creating user:", error);
+    console.log("Error during wallet signin:", error);
+    return { status: "failed", message: "Internal server error" };
   }
 };

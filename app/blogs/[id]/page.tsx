@@ -1,15 +1,13 @@
-"use client";
+import SingleBlogDisp from "@/app/components/SingleBlogDisp";
+import { GetBlogById } from "@/app/lib/BlogFunc";
 
-import { useParams } from "next/navigation";
-
-export default function Page() {
-  const params = useParams();
-  const { id } = params; // <-- the dynamic route value
+export default async function Page({ params }: { params: any }) {
+  const { id } = await params;
+  const singleBlog = await GetBlogById(id);
 
   return (
     <div>
-      <h1>Single Blog Page</h1>
-      <p>Blog ID: {id}</p>
+      <SingleBlogDisp blog={JSON.stringify(singleBlog)} />
     </div>
   );
 }

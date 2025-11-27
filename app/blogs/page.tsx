@@ -1,9 +1,22 @@
-import React from 'react'
+"use server";
 
-const page = () => {
+import AllBlogsDisp from "../components/AllBlogsDisp";
+import { GetAllBlogs } from "../lib/BlogFunc";
+
+const page = async () => {
+  const allBlogs = await GetAllBlogs();
+
   return (
-    <div>blog page</div>
-  )
-}
+    <div>
+      <h2 className="text-2xl">All blogs</h2>
 
-export default page
+      <AllBlogsDisp
+        blogs={
+          allBlogs.status === "success" ? JSON.stringify(allBlogs.message) : []
+        }
+      />
+    </div>
+  );
+};
+
+export default page;

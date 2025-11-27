@@ -5,7 +5,7 @@ import { ethers } from "ethers";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { useModal } from "@/app/hooks/use-modal-store";
-import { HandleCredentialSignin } from "@/app/lib/actions";
+import { HandleCredentialSignin, HandleWalletSignin } from "@/app/lib/actions";
 
 export type AuthPayload = {
   email?: string;
@@ -83,16 +83,15 @@ const AuthUserModel = () => {
         signature,
         firstTime
       };
-
-      console.log(payload);
-
-      // if (res.status === "success") {
-      //   router.push("/profile");
-      //   onClose();
-      //   router.refresh();
-      // } else {
-      //   toast("Wallet authentication failed");
-      // }
+      const res = await HandleWalletSignin(payload);
+      if (res.status === "success") {
+        // router.push("/profile");
+        toast("Wallet authenticated successfully");
+        onClose();
+        router.refresh();
+      } else {
+        toast("Wallet authentication failed");
+      }
     } catch (err) {
       toast("Error connecting to MetaMask");
     }

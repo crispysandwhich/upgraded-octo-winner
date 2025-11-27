@@ -13,13 +13,11 @@ const MainHeader = ({ userData, version }: MainHeaderProps) => {
   const [currentSession, setCurrentSession] = useState(JSON.parse(userData));
   const { onOpen } = useModal();
 
-
   useEffect(() => {
     setCurrentSession(JSON.parse(userData));
   },[version])
 
   const HandleAuthentication = () => {
-    console.log("opening AuthModal");
     onOpen("AuthUser");
   };
 
@@ -59,7 +57,7 @@ const MainHeader = ({ userData, version }: MainHeaderProps) => {
           )}
         </nav>
       </div>
-      {currentSession?.isLoggedIn && (
+      {(currentSession?.isLoggedIn && currentSession.role === "CAPTAIN") && (
         <div className="flex items-center justify-between gap-4 text-sm mt-4">
           <h2 className="font-semibold tracking-tight ">hello admin</h2>
           <nav>
