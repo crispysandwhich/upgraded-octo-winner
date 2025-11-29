@@ -7,9 +7,11 @@ export interface IBlog {
   image?: string;
   description: string;  
   categories?: string[];
-  likes?: number;
-  dislikes?: number;
+  likes?: mongoose.Types.ObjectId[];
+  dislikes?: mongoose.Types.ObjectId[];
   comments?: mongoose.Types.ObjectId[];
+  views?: mongoose.Types.ObjectId[];
+  notLoggedViews?: number;
 }
 
 // Make it better
@@ -37,14 +39,18 @@ const BlogSchema = new mongoose.Schema<IBlog>(
       type: [String],
       default: [],
     },
-    likes: {
-      type: Number,
-      default: 0,
-    },
-    dislikes: {
-      type: Number,
-      default: 0,
-    },
+    likes: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    }],
+    dislikes: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    }],
+    views: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    }],
     comments: [
       {
         type: mongoose.Schema.Types.ObjectId,

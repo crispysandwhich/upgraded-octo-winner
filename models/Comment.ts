@@ -4,8 +4,9 @@ export interface IComment {
   user: mongoose.Types.ObjectId;
   blog: mongoose.Types.ObjectId;
   text: string;
-  likes?: number;
-  dislikes?: number;
+  likes?: mongoose.Types.ObjectId[];
+  dislikes?: mongoose.Types.ObjectId[];
+  comments?: mongoose.Types.ObjectId[];
 }
 
 const CommentSchema = new mongoose.Schema<IComment>(
@@ -26,18 +27,29 @@ const CommentSchema = new mongoose.Schema<IComment>(
       required: true,
       trim: true,
     },
-    likes: {
-      type: Number,
-      default: 0,
-    },
-    dislikes: {
-      type: Number,
-      default: 0,
-    },
+    likes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    dislikes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    comments: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   {
     timestamps: true,
   }
 );
 
-export default mongoose.models.Comment || mongoose.model("Comment", CommentSchema);
+export default mongoose.models.Comment ||
+  mongoose.model("Comment", CommentSchema);

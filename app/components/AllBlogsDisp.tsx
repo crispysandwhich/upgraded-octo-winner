@@ -51,7 +51,7 @@ const AllBlogsDisp = ({ blogs }: AllBlogsDispProps) => {
                 </p>
 
                 <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
-                  <span>✍️ Author: {blog.author || "Unknown"}</span>
+                  <span className="text-[12px] font-bold">✍️ Author: {blog.user.metaAddress || "Unknown"}</span>
                   <span>
                     📅{" "}
                     {new Date(blog.createdAt).toLocaleDateString("en-US", {

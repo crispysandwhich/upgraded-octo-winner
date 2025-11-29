@@ -1,8 +1,16 @@
 import Link from "next/link";
 import RecentBlog from "./components/RecentBlog";
 import CommentSection from "./components/CommentSection";
+import { GetRecentBlog } from "./lib/BlogFunc";
+import { getSession } from "./lib/actions";
+import { GetBlogComments } from "./lib/CommentFunc";
 
-export default function BlogLandingFull() {
+export default async function BlogLandingFull() {
+
+  const recentBlog = await GetRecentBlog()
+  const commentsBlog = await GetBlogComments(recentBlog.message[0]._id)
+  const userSession = await getSession()
+
   return (
     <div className="min-h-screen bg-[#2C4C57] text-gray-900 antialiased font-sans">
       <main className="max-w-4xl mx-auto px-4 py-12">
@@ -36,10 +44,16 @@ export default function BlogLandingFull() {
         </section>
 
         {/* BLOG + META */}
-        <RecentBlog />
+        <RecentBlog 
+          blog={JSON.stringify(recentBlog)}
+          session={JSON.stringify(userSession)}
+         />
 
-        {/* COMMENTS SECTION (linked visually to blog by proximity and card style) */}
-        <CommentSection />
+        <CommentSection 
+          session={JSON.stringify(userSession)} 
+          commentsBlog={JSON.stringify(commentsBlog)}
+          blogId={recentBlog.message[0]._id.toString()}
+        />
 
         {/* small features row */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4">

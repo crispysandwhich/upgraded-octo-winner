@@ -1,50 +1,60 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
+import { toast } from "react-toastify";
+import { DislikeBlog, IncrementBlogViews, LikeBlog } from "../lib/BlogFunc";
+import BlogComments from "./BlogComments";
+import { usePathname } from "next/navigation";
 
 interface SingleBlogDispProps {
   blog: any;
+  session: any;
+  comments: any;
 }
 
-const SingleBlogDisp = ({ blog }: SingleBlogDispProps) => {
+const SingleBlogDisp = ({ blog, session, comments }: SingleBlogDispProps) => {
   const blogData = JSON.parse(blog).message;
+  const userSession = JSON.parse(session);
+  const pathname = usePathname();
 
-  const [likes, setLikes] = useState<number>(blogData.likes ?? 0);
-  const [dislikes, setDislikes] = useState<number>(blogData.dislikes ?? 0);
-  const [views, setViews] = useState<number>(blogData.views ?? 0);
+  const [likes, setLikes] = useState<number>(blogData.likes.length ?? 0);
+  const [dislikes, setDislikes] = useState<number>(
+    blogData.dislikes.length ?? 0
+  );
+  const [views, setViews] = useState<number>(blogData.views.length ?? 0);
   const [liked, setLiked] = useState<boolean>(false);
   const [disliked, setDisliked] = useState<boolean>(false);
 
   useEffect(() => {
-    setViews((v) => v + 1);
+    const x = async() => {
+      await IncrementBlogViews(blogData._id, userSession.userId);
+    }
+    if (blogData.isLoggedIn) {
+      x()
+      setViews((v) => v + 1);
+    } else {
+      setViews((v) => v + 1);
+    }
   }, []);
 
-  const handleLike = () => {
-    if (liked) {
-      setLiked(false);
-      setLikes((l) => Math.max(0, l - 1));
-      return;
+  const handleLike = async () => {
+    if (userSession.isLoggedIn) {
+      await LikeBlog(blogData._id, userSession.userId);
+      setLikes((l) => l + 1);
+      setDislikes((d) => d - 1);
+    } else {
+      toast.info("Please log in to like the blog.");
     }
-    if (disliked) {
-      setDisliked(false);
-      setDislikes((d) => Math.max(0, d - 1));
-    }
-    setLiked(true);
-    setLikes((l) => l + 1);
   };
 
-  const handleDislike = () => {
-    if (disliked) {
-      setDisliked(false);
-      setDislikes((d) => Math.max(0, d - 1));
-      return;
+  const handleDislike = async () => {
+    if (userSession.isLoggedIn) {
+      await DislikeBlog(blogData._id, userSession.userId);
+      setDislikes((d) => d + 1);
+      setLikes((l) => l - 1);
+    } else {
+      toast.info("Please log in to like the blog.");
     }
-    if (liked) {
-      setLiked(false);
-      setLikes((l) => Math.max(0, l - 1));
-    }
-    setDisliked(true);
-    setDislikes((d) => d + 1);
   };
 
   return (
@@ -58,7 +68,7 @@ const SingleBlogDisp = ({ blog }: SingleBlogDispProps) => {
       {/* Image */}
       {blogData.image && (
         <div className="relative w-full h-[300px] sm:h-[420px] md:h-[520px] mb-6 rounded-lg overflow-hidden border border-gray-700">
-          <Image src={blogData.image} alt="blog image" fill unoptimized className="object-cover filter blur-sm" />
+          <Image src={blogData.image} alt="blog image" fill unoptimized />
           <div className="absolute inset-0 bg-black/20" aria-hidden />
         </div>
       )}
@@ -71,7 +81,9 @@ const SingleBlogDisp = ({ blog }: SingleBlogDispProps) => {
               onClick={handleLike}
               aria-label="Like post"
               className={`inline-flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium transition ${
-                liked ? "bg-blue-600 text-white" : "text-gray-200 hover:bg-gray-700"
+                liked
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-200 hover:bg-gray-700"
               }`}
             >
               👍 <span className="ml-1">{likes}</span>
@@ -81,7 +93,9 @@ const SingleBlogDisp = ({ blog }: SingleBlogDispProps) => {
               onClick={handleDislike}
               aria-label="Dislike post"
               className={`inline-flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium transition ${
-                disliked ? "bg-red-600 text-white" : "text-gray-200 hover:bg-gray-700"
+                disliked
+                  ? "bg-red-600 text-white"
+                  : "text-gray-200 hover:bg-gray-700"
               }`}
             >
               👎 <span className="ml-1">{dislikes}</span>
@@ -93,14 +107,22 @@ const SingleBlogDisp = ({ blog }: SingleBlogDispProps) => {
           </div>
         </div>
 
-        <div className="text-xs text-gray-400">Published: {new Date(blogData.createdAt ?? blogData.publishedAt ?? Date.now()).toLocaleDateString()}</div>
+        <div className="text-xs text-gray-400">
+          Published:{" "}
+          {new Date(
+            blogData.createdAt ?? blogData.publishedAt ?? Date.now()
+          ).toLocaleDateString()}
+        </div>
       </div>
 
       {/* Tags */}
       {Array.isArray(blogData.categories) && blogData.categories.length > 0 && (
         <ul className="flex gap-2 mt-2 mb-6 flex-wrap">
           {blogData.categories.map((cat: string) => (
-            <li key={cat} className="text-xs bg-gray-800 text-gray-200 px-2 py-1 rounded">
+            <li
+              key={cat}
+              className="text-xs bg-gray-800 text-gray-200 px-2 py-1 rounded"
+            >
               {cat}
             </li>
           ))}
@@ -108,8 +130,17 @@ const SingleBlogDisp = ({ blog }: SingleBlogDispProps) => {
       )}
 
       {/* Content */}
-      <p className="leading-relaxed text-gray-300 text-lg mb-6">{blogData.content}</p>
+      <p className="leading-relaxed text-gray-300 text-lg mb-6">
+        {blogData.content}
+      </p>
 
+
+      <BlogComments 
+        userSession={userSession} 
+        blogId={blogData._id}
+        comments={comments}
+        path={pathname}
+        />
     </div>
   );
 };

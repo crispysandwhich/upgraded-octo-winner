@@ -3,130 +3,148 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { DislikeBlog, LikeBlog } from "../lib/BlogFunc";
 
-const RecentBlog = () => {
-  const [likes, setLikes] = useState(5);
-  const [dislikes, setDislikes] = useState(2);
+interface RecentBlogProps {
+  blog: any;
+  session: any
+}
+
+export default function RecentBlog({ blog, session }: RecentBlogProps) {
+  const BlogData = JSON.parse(blog).message[0];
+  const userSession = JSON.parse(session);
+
+  const [likes, setLikes] = useState(BlogData.likes.length ?? 0);
+  const [dislikes, setDislikes] = useState(BlogData.dislikes.length ?? 0);
+  const [views, setViews] = useState(BlogData.views.length ?? 0);
+
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
-  const [views, setViews] = useState<number>(1024);
 
-  const handleLike = () => {
-    if (liked) {
-      setLiked(false);
-      setLikes((l) => Math.max(0, l - 1));
-      return;
+  const formattedDate = new Date(BlogData.createdAt).toLocaleDateString(
+    "en-US",
+    {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     }
-    if (disliked) {
-      setDisliked(false);
-      setDislikes((d) => Math.max(0, d - 1));
+  );
+
+  const handleLike = async () => {
+    if(userSession.isLoggedIn) {
+      await LikeBlog(BlogData._id, userSession.userId);
+      setLikes((l) => l + 1);
+      setDislikes((d) => d - 1);
+    } else {
+      toast.info("Please log in to like the blog.");
     }
-    setLiked(true);
-    setLikes((l) => l + 1);
   };
 
-  const handleDislike = () => {
-    if (disliked) {
-      setDisliked(false);
-      setDislikes((d) => Math.max(0, d - 1));
-      return;
+  const handleDislike = async () => {
+    if(userSession.isLoggedIn) {
+      await DislikeBlog(BlogData._id, userSession.userId);
+      setDislikes((d) => d + 1);
+      setLikes((l) => l - 1);
+    } else {
+      toast.info("Please log in to like the blog.");
     }
-    if (liked) {
-      setLiked(false);
-      setLikes((l) => Math.max(0, l - 1));
-    }
-    setDisliked(true);
-    setDislikes((d) => d + 1);
   };
 
-
-  useEffect(() => {
-    setViews((v) => v + 1); // increment view on client mount
-  }, []);
-  
   return (
-    <section className="mb-8">
-      <article className="rounded-2xl bg-white shadow-md border border-gray-100 overflow-hidden">
-        <div className="relative w-full h-[300px] sm:h-[420px] md:h-[520px]">
+    <section className="mb-10">
+      <article className="rounded-2xl bg-white shadow-md border border-gray-200 overflow-hidden hover:shadow-xl transition">
+        {/* IMAGE */}
+        <div className="relative w-full h-[260px] sm:h-[340px] md:h-[420px]">
           <Image
-            src="/blogthumb.png"
-            alt="blog thumbnail"
+            src={BlogData.image || "/blogthumb.png"}
+            alt={BlogData.title}
             fill
-            sizes="(max-width:768px) 100vw, 100vw"
           />
         </div>
 
-        <div className="p-6">
+        {/* CONTENT */}
+        <div className="p-6 md:p-8">
           <header className="flex items-start justify-between gap-6">
             <div>
-              <h2 className="text-xl sm:text-2xl font-semibold">
-                My First Blog
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">
+                {BlogData.title}
               </h2>
-              <div className="flex items-center gap-3 text-sm">
-                <div className="w-6 h-6 relative ">
-                  <Image src="/globe.svg" alt="logo" fill className="rounded" />
+
+              <p className="text-gray-600 text-sm">{BlogData.description}</p>
+
+              <div className="flex items-center gap-3 mt-2">
+                <div className="w-7 h-7 relative">
+                  <Image
+                    src="/globe.svg"
+                    fill
+                    alt="author"
+                    className="rounded"
+                  />
                 </div>
-                <h3>LyubTHEBEST1</h3>
+
+                <p className="text-sm text-gray-700">
+                  {BlogData.user?.metaAddress ?? "Unknown user"}
+                </p>
               </div>
-              <p className="mt-1 text-sm text-gray-600">
-                Published October 5, 2023
-              </p>
+
+              <p className="mt-1 text-xs text-gray-500">{formattedDate}</p>
             </div>
 
-            {/* like/dislike/views */}
-            <div className="flex items-center gap-3">
+            {/* LIKE / DISLIKE / VIEWS */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={handleLike}
-                aria-label="like"
                 className={`px-3 py-1 rounded-md text-sm font-medium transition ${
                   liked
                     ? "bg-gray-900 text-white"
-                    : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
                 👍 {likes}
               </button>
+
               <button
                 onClick={handleDislike}
-                aria-label="dislike"
                 className={`px-3 py-1 rounded-md text-sm font-medium transition ${
                   disliked
-                    ? "bg-rose-700 text-white"
-                    : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                    ? "bg-rose-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
                 👎 {dislikes}
               </button>
-              <div className="px-3 py-1 rounded-md bg-gray-50 text-sm text-gray-700 border border-gray-100">
+
+              <div className="px-3 py-1 rounded-md bg-gray-50 text-sm text-gray-700 border border-gray-200">
                 👁 {views}
               </div>
             </div>
           </header>
 
-          <p className="mt-4 text-gray-700 leading-relaxed">
-            This is a composed excerpt — a short, crisp summary of the post. It
-            introduces the subject and gives the reader enough context to decide
-            whether to read further.{" "}
+          {/* EXCERPT */}
+          <p className="mt-4 text-gray-800 leading-relaxed">
+            {BlogData.content.slice(0, 140)}...
             <Link
-              href="/blogs/1"
-              className="text-gray-900 font-medium hover:underline"
+              href={`/blogs/${BlogData._id}`}
+              className="text-gray-900 font-medium hover:underline ml-2"
             >
               Read more →
             </Link>
           </p>
 
+          {/* CATEGORIES */}
           <div className="mt-6 flex gap-3 flex-wrap">
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded font-medium">
-              coding
-            </span>
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded font-medium">
-              web3
-            </span>
+            {BlogData.categories?.map((c: string) => (
+              <span
+                key={c}
+                className="text-xs bg-gray-100 px-2 py-1 rounded-md font-medium text-gray-700"
+              >
+                {c}
+              </span>
+            ))}
           </div>
         </div>
       </article>
     </section>
   );
-};
-
-export default RecentBlog;
+}

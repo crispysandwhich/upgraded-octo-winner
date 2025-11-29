@@ -1,123 +1,157 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { UploadComment } from "../lib/CommentFunc";
+import { usePathname } from "next/navigation";
 
-type Comment = { id: string; name: string; date: string; text: string };
+interface CommentSectionProps {
+  session: any;
+  commentsBlog: any;
+  blogId: string;
+}
 
 const BATCH = 10;
 const INITIAL_VISIBLE = BATCH;
 
-const CommentSection = () => {
+const avatar = (seed: string) =>
+  `https://api.dicebear.com/7.x/thumbs/svg?seed=${seed}`;
+
+const CommentSection = ({
+  session,
+  commentsBlog,
+  blogId,
+}: CommentSectionProps) => {
+  const UserSession = JSON.parse(session);
+  const UserComments = JSON.parse(commentsBlog).message;
+
+  console.log("UserComments list availbe in the comment section for the recent:", UserComments);
+
+  const pathname = usePathname();
   const [commentText, setCommentText] = useState("");
-  const [comments, setComments] = useState<Comment[]>(
-    Array.from({ length: 27 }).map((_, i) => ({
-      id: String(i + 1),
-      name: `Reader ${i + 1}`,
-      date: new Date(Date.now() - i * 1000 * 60 * 60).toLocaleString(),
-      text: "Thoughtful reaction — short, professional, useful. This is a sample comment to show layout.",
-    }))
-  );
+  const [comments, setComments] = useState(UserComments || []);
 
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const commentsRef = useRef<HTMLDivElement | null>(null);
   const lastScrollTop = useRef<number>(0);
 
-  const submitComment = (e?: React.FormEvent) => {
+  // SUBMIT COMMENT
+  const submitComment = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const text = commentText.trim();
     if (!text) return;
-    const c: Comment = {
-      id: String(Date.now()),
-      name: "Anonymous",
-      date: new Date().toLocaleString(),
-      text,
-    };
-    setComments((s) => [c, ...s]);
-    setCommentText("");
-    // ensure newly posted comment is visible
-    setVisibleCount((v) =>
-      Math.min(comments.length + 1, Math.max(INITIAL_VISIBLE, v))
-    );
-    // scroll to top of comment container if desired (optional)
-    commentsRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+
+    // send to DB
+    const result = await UploadComment({
+      content: text,
+      blogId,
+      userId: UserSession.userId,
+      path: pathname,
+    });
+
+    console.log(result, "Upload Comment Result");
   };
 
-  // scroll handler: scroll down to increase visibleCount by BATCH,
-  // scroll up (any upward movement) resets visibleCount to initial
-  useEffect(() => {
-    const el = commentsRef.current;
-    if (!el) return;
-
-    const onScroll = () => {
-      const { scrollTop, clientHeight, scrollHeight } = el;
-      // Scroll down near bottom -> load more
-      if (scrollTop + clientHeight >= scrollHeight - 16) {
-        setVisibleCount((v) => Math.min(comments.length, v + BATCH));
-      }
-
-      // Scroll up -> collapse to initial when user scrolls upwards
-      if (scrollTop < lastScrollTop.current) {
-        // upward scroll detected
-        setVisibleCount(INITIAL_VISIBLE);
-      }
-
-      lastScrollTop.current = scrollTop;
-    };
-
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, [comments.length]);
-
   return (
-    <section className="mb-8 rounded-2xl bg-white border border-gray-100 shadow-lg p-6">
+    <section
+      className="
+        mb-8 rounded-2xl 
+        bg-gradient-to-b from-[#f5f4ef] to-[#edebe4]
+        dark:from-[#1a1a1a] dark:to-[#101010]
+        border border-[#e0ddd5] dark:border-[#2a2a2a]
+        shadow-[0_0_35px_-10px_rgba(0,0,0,0.25)]
+        p-6 text-gray-700 dark:text-gray-300
+      "
+    >
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Comments</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          Comments
+        </h3>
         <span className="text-sm text-gray-500">{comments.length} total</span>
       </div>
 
-      {/* input */}
-      <form onSubmit={submitComment} className="mt-4 space-y-3">
-        <textarea
-          value={commentText}
-          onChange={(e) => setCommentText(e.target.value)}
-          rows={3}
-          placeholder="Share a respectful thought..."
-          className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none"
-        />
-        <div className="flex justify-end items-center">
+      {/* COMMENT BOX */}
+      {UserSession.isLoggedIn && (
+        <form onSubmit={submitComment} className="mt-4 space-y-3">
+          <textarea
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            rows={3}
+            placeholder="Share your thoughts..."
+            className="
+              w-full rounded-xl min-h-[100px] p-4 resize-none
+              bg-white/80 dark:bg-[#1f1f1f]/70
+              border border-gray-300 dark:border-gray-700
+              text-gray-900 dark:text-gray-200
+              focus:outline-none focus:ring-2 focus:ring-orange-400 dark:focus:ring-orange-600
+            "
+          />
 
-          <button
-            type="submit"
-            className="px-4 py-2 bg-gray-900 text-white rounded-md text-sm shadow-sm hover:bg-black"
-          >
-            Post Comment
-          </button>
-        </div>
-      </form>
+          <div className="flex justify-end items-center">
+            <button
+              type="submit"
+              className="
+                px-4 py-2 rounded-xl text-white text-sm font-medium
+                bg-gradient-to-r from-orange-400 to-amber-500
+                hover:from-orange-500 hover:to-amber-600
+                dark:from-orange-500 dark:to-amber-600
+                shadow-md hover:shadow-lg transition-all
+                active:scale-[0.97]
+              "
+            >
+              Post Comment
+            </button>
+          </div>
+        </form>
+      )}
 
-      {/* comments container */}
+      {/* COMMENT LIST */}
       <div
         ref={commentsRef}
-        className="mt-4 max-h-96 overflow-auto border-t border-gray-100 pt-4 space-y-4"
+        className="mt-5 max-h-96 overflow-auto border-t border-[#e2dfd6] dark:border-[#333] pt-4 space-y-4 pr-2"
       >
-        {comments.slice(0, visibleCount).map((c) => (
+        {comments.slice(0, visibleCount).map((c: any) => (
           <div
-            key={c.id}
-            className="px-3 py-3 rounded-md bg-gray-50 border border-gray-100"
+            key={c._id}
+            className="
+              px-4 py-4 rounded-xl
+              bg-white/70 dark:bg-[#1c1c1c]
+              border border-[#e6e4dc] dark:border-[#2c2c2c]
+              shadow-sm animate-fadeIn
+            "
           >
-            <div className="flex items-baseline justify-between gap-4">
+            {/* TOP USER ROW */}
+            <div className="flex items-center gap-3">
+              <img
+                src={avatar(c.user?.metaAddress)}
+                className="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-700"
+                alt=""
+              />
+
               <div>
-                <div className="text-sm font-medium text-gray-900">
-                  {c.name}
+                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {c.user?.metaAddress?.slice(0, 10)}...
                 </div>
-                <div className="text-xs text-gray-500">{c.date}</div>
+
+                <div className="text-xs text-gray-500">
+                  {new Date(c.createdAt).toLocaleString()}
+                </div>
               </div>
             </div>
-            <p className="mt-2 text-sm text-gray-700">{c.text}</p>
+
+            {/* COMMENT TEXT */}
+            <p className="mt-3 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+              {c.text}
+            </p>
+
+            {/* LIKE / DISLIKE */}
+            <div className="flex gap-4 mt-3 text-xs text-gray-500">
+              <span>👍 {c.likes.length}</span>
+              <span>👎 {c.dislikes.length}</span>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* controls (also reflect dynamic state) */}
+      {/* FOOTER CONTROLS */}
       <div className="mt-4 flex justify-between items-center">
         <div className="text-xs text-gray-500">
           Showing {Math.min(visibleCount, comments.length)} of {comments.length}
@@ -129,7 +163,7 @@ const CommentSection = () => {
               onClick={() =>
                 setVisibleCount((v) => Math.min(comments.length, v + BATCH))
               }
-              className="px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-sm"
+              className="px-3 py-1 rounded-md bg-gray-200 dark:bg-[#333] hover:bg-gray-300 dark:hover:bg-[#444] text-sm transition"
             >
               Load more
             </button>
@@ -138,13 +172,23 @@ const CommentSection = () => {
           {visibleCount > INITIAL_VISIBLE && (
             <button
               onClick={() => setVisibleCount(INITIAL_VISIBLE)}
-              className="px-3 py-1 rounded-md bg-white border border-gray-200 text-sm"
+              className="px-3 py-1 rounded-md bg-gray-100 dark:bg-[#222] border border-gray-300 dark:border-gray-700 hover:border-gray-500 text-sm transition"
             >
               Collapse
             </button>
           )}
         </div>
       </div>
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.25s ease-out;
+        }
+      `}</style>
     </section>
   );
 };
