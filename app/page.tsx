@@ -1,3 +1,4 @@
+"use server"
 import Link from "next/link";
 import RecentBlog from "./components/RecentBlog";
 import CommentSection from "./components/CommentSection";
@@ -10,6 +11,8 @@ export default async function BlogLandingFull() {
   const recentBlog = await GetRecentBlog()
   const commentsBlog = await GetBlogComments(recentBlog.message[0]._id)
   const userSession = await getSession()
+
+ 
 
   return (
     <div className="min-h-screen bg-[#2C4C57] text-gray-900 antialiased font-sans">

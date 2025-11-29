@@ -23,10 +23,7 @@ const BlogComments = ({ userSession, blogId, comments, path }: BlogCommentsProps
       path
     });
 
-    console.log(res);
   };
-
-  console.log(commentData, "Comments Data for the single");
 
   return (
     <div

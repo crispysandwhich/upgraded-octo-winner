@@ -2,25 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { DislikeBlog, LikeBlog } from "../lib/BlogFunc";
+import { usePathname } from "next/navigation";
 
 interface RecentBlogProps {
   blog: any;
-  session: any
+  session: any;
 }
 
 export default function RecentBlog({ blog, session }: RecentBlogProps) {
   const BlogData = JSON.parse(blog).message[0];
   const userSession = JSON.parse(session);
 
-  const [likes, setLikes] = useState(BlogData.likes.length ?? 0);
-  const [dislikes, setDislikes] = useState(BlogData.dislikes.length ?? 0);
-  const [views, setViews] = useState(BlogData.views.length ?? 0);
-
-  const [liked, setLiked] = useState(false);
-  const [disliked, setDisliked] = useState(false);
+  const pathname = usePathname();
 
   const formattedDate = new Date(BlogData.createdAt).toLocaleDateString(
     "en-US",
@@ -32,20 +27,18 @@ export default function RecentBlog({ blog, session }: RecentBlogProps) {
   );
 
   const handleLike = async () => {
-    if(userSession.isLoggedIn) {
-      await LikeBlog(BlogData._id, userSession.userId);
-      setLikes((l) => l + 1);
-      setDislikes((d) => d - 1);
+    if (userSession.isLoggedIn) {
+      await LikeBlog(BlogData._id, userSession.userId, pathname);
+      // setLikes((l) => l + 1);
+      // setDislikes((d) => d - 1);
     } else {
       toast.info("Please log in to like the blog.");
     }
   };
 
   const handleDislike = async () => {
-    if(userSession.isLoggedIn) {
-      await DislikeBlog(BlogData._id, userSession.userId);
-      setDislikes((d) => d + 1);
-      setLikes((l) => l - 1);
+    if (userSession.isLoggedIn) {
+      await DislikeBlog(BlogData._id, userSession.userId, pathname);
     } else {
       toast.info("Please log in to like the blog.");
     }
@@ -96,27 +89,23 @@ export default function RecentBlog({ blog, session }: RecentBlogProps) {
               <button
                 onClick={handleLike}
                 className={`px-3 py-1 rounded-md text-sm font-medium transition ${
-                  liked
-                    ? "bg-gray-900 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                👍 {likes}
+                👍 {BlogData.likes.length}
               </button>
 
               <button
                 onClick={handleDislike}
                 className={`px-3 py-1 rounded-md text-sm font-medium transition ${
-                  disliked
-                    ? "bg-rose-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                👎 {dislikes}
+                👎 {BlogData.dislikes.length}
               </button>
 
               <div className="px-3 py-1 rounded-md bg-gray-50 text-sm text-gray-700 border border-gray-200">
-                👁 {views}
+                👁 {BlogData.views.length + BlogData.notLoggedViews}
               </div>
             </div>
           </header>

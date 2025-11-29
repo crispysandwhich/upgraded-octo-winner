@@ -51,6 +51,10 @@ const BlogSchema = new mongoose.Schema<IBlog>(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     }],
+    notLoggedViews: {
+      type: Number,
+      default: 0,
+    },
     comments: [
       {
         type: mongoose.Schema.Types.ObjectId,

@@ -2,7 +2,12 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { toast } from "react-toastify";
-import { DislikeBlog, IncrementBlogViews, LikeBlog } from "../lib/BlogFunc";
+import {
+  DislikeBlog,
+  IncrementBlogViews,
+  LikeBlog,
+  LogViews,
+} from "../lib/BlogFunc";
 import BlogComments from "./BlogComments";
 import { usePathname } from "next/navigation";
 
@@ -17,31 +22,24 @@ const SingleBlogDisp = ({ blog, session, comments }: SingleBlogDispProps) => {
   const userSession = JSON.parse(session);
   const pathname = usePathname();
 
-  const [likes, setLikes] = useState<number>(blogData.likes.length ?? 0);
-  const [dislikes, setDislikes] = useState<number>(
-    blogData.dislikes.length ?? 0
-  );
-  const [views, setViews] = useState<number>(blogData.views.length ?? 0);
-  const [liked, setLiked] = useState<boolean>(false);
-  const [disliked, setDisliked] = useState<boolean>(false);
-
   useEffect(() => {
-    const x = async() => {
-      await IncrementBlogViews(blogData._id, userSession.userId);
-    }
+    const x = async () => {
+      await IncrementBlogViews(blogData._id, userSession.userId, pathname);
+    };
+    const y = async () => {
+      await LogViews(blogData._id, pathname);
+    };
+
     if (blogData.isLoggedIn) {
-      x()
-      setViews((v) => v + 1);
+      x();
     } else {
-      setViews((v) => v + 1);
+      y();
     }
   }, []);
 
   const handleLike = async () => {
     if (userSession.isLoggedIn) {
-      await LikeBlog(blogData._id, userSession.userId);
-      setLikes((l) => l + 1);
-      setDislikes((d) => d - 1);
+      await LikeBlog(blogData._id, userSession.userId, pathname);
     } else {
       toast.info("Please log in to like the blog.");
     }
@@ -49,9 +47,7 @@ const SingleBlogDisp = ({ blog, session, comments }: SingleBlogDispProps) => {
 
   const handleDislike = async () => {
     if (userSession.isLoggedIn) {
-      await DislikeBlog(blogData._id, userSession.userId);
-      setDislikes((d) => d + 1);
-      setLikes((l) => l - 1);
+      await DislikeBlog(blogData._id, userSession.userId, pathname);
     } else {
       toast.info("Please log in to like the blog.");
     }
@@ -80,29 +76,24 @@ const SingleBlogDisp = ({ blog, session, comments }: SingleBlogDispProps) => {
             <button
               onClick={handleLike}
               aria-label="Like post"
-              className={`inline-flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium transition ${
-                liked
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-200 hover:bg-gray-700"
-              }`}
+              className={`inline-flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium transition ${"bg-blue-600 text-white"}`}
             >
-              👍 <span className="ml-1">{likes}</span>
+              👍 <span className="ml-1">{blogData.likes.length}</span>
             </button>
 
             <button
               onClick={handleDislike}
               aria-label="Dislike post"
-              className={`inline-flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium transition ${
-                disliked
-                  ? "bg-red-600 text-white"
-                  : "text-gray-200 hover:bg-gray-700"
-              }`}
+              className={`inline-flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium transition ${"bg-red-600 text-white"}`}
             >
-              👎 <span className="ml-1">{dislikes}</span>
+              👎 <span className="ml-1">{blogData.dislikes.length}</span>
             </button>
 
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md text-sm text-gray-200">
-              👁️ <span className="ml-1">{views}</span>
+              👁️{" "}
+              <span className="ml-1">
+                {blogData.views.length + blogData.notLoggedViews}
+              </span>
             </div>
           </div>
         </div>
@@ -134,13 +125,12 @@ const SingleBlogDisp = ({ blog, session, comments }: SingleBlogDispProps) => {
         {blogData.content}
       </p>
 
-
-      <BlogComments 
-        userSession={userSession} 
+      <BlogComments
+        userSession={userSession}
         blogId={blogData._id}
         comments={comments}
         path={pathname}
-        />
+      />
     </div>
   );
 };

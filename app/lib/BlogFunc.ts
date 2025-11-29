@@ -87,59 +87,100 @@ export const GetRecentBlog = async () => {
   }
 };
 
-export const LikeBlog = async (blogId: string, userId: string) => {
+export const LikeBlog = async (blogId: string, userId: string, path: string) => {
   try {
     await dbConnect();
 
-    const updatedBlog = await Blog.findByIdAndUpdate(
-      blogId,
-      {
-        // Remove from dislikes
-        $pull: { dislikes: userId },
-        // Add to likes only if not present
-        $addToSet: { likes: userId },
-      },
-      { new: true } // return updated document
-    );
+    const blog = await Blog.findById(blogId);
+    if (!blog) {
+      return { status: "error", message: "Blog not found" };
+    }
 
-    revalidatePath("/")
-    
+    const alreadyLiked = blog.likes.some((id) => id.toString() === userId);
+    const alreadyDisliked = blog.dislikes.some((id) => id.toString() === userId);
+
+    let updateQuery: any = {};
+
+    if (alreadyLiked) {
+      // 🔹 Case 1: User already liked → UNLIKE
+      updateQuery = { $pull: { likes: userId } };
+    } else {
+      // 🔹 Case 2: User disliked → remove dislike + add like
+      // 🔹 Case 3: User neutral → add like
+      updateQuery = {
+        $pull: { dislikes: userId },   
+        $addToSet: { likes: userId },  
+      };
+    }
+
+    await Blog.findByIdAndUpdate(blogId, updateQuery, { new: true });
+
+    // Revalidate UI
+    if (path === "/") revalidatePath("/");
+    revalidatePath(path);
+
+    return {
+      status: "success",
+      message: alreadyLiked
+        ? "Like removed"
+        : "Blog liked (dislike removed if present)",
+    };
   } catch (error) {
     console.log("Error liking blog:", error);
     return { status: "error", message: "Failed to like blog." };
   }
 };
 
-export const DislikeBlog = async (blogId: string, userId: string) => {
+
+
+export const DislikeBlog = async (blogId: string, userId: string, path: string) => {
   try {
     await dbConnect();
 
     const blog = await Blog.findById(blogId);
-
     if (!blog) {
       return { status: "error", message: "Blog not found" };
     }
 
-    // Remove user from likes
-    blog.likes = blog.likes.filter(
-      (id) => id.toString() !== userId
-    );
+    const alreadyDisliked = blog.dislikes.some((id) => id.toString() === userId);
+    const alreadyLiked = blog.likes.some((id) => id.toString() === userId);
 
-    // Add user to dislikes only if not already in dislikes
-    if (!blog.dislikes.some((id) => id.toString() === userId)) {
-      blog.dislikes.push(userId);
+    let updateQuery: any = {};
+
+    if (alreadyDisliked) {
+      // 🔹 User already disliked → remove dislike
+      updateQuery = { $pull: { dislikes: userId } };
+    } else {
+      // 🔹 User liked → remove like + add dislike
+      // 🔹 User neutral → just add dislike
+      updateQuery = {
+        $pull: { likes: userId },        // remove like if exists
+        $addToSet: { dislikes: userId }, // add dislike
+      };
     }
 
-    await blog.save();
+    await Blog.findByIdAndUpdate(blogId, updateQuery, { new: true });
 
-    return { status: "success", message: blog.dislikes };
+    // Revalidate UI paths
+    if (path === "/") revalidatePath("/");
+    revalidatePath(path);
+
+    return {
+      status: "success",
+      disliked: !alreadyDisliked,
+      message: alreadyDisliked
+        ? "Dislike removed"
+        : "Blog disliked (like removed if present)",
+    };
   } catch (error) {
     console.log("Error disliking blog:", error);
     return { status: "error", message: "Failed to dislike blog." };
   }
 };
 
-export const IncrementBlogViews = async (blogId: string, userId: string) => {
+// TODO:: Make a single function for both logged in and not logged in views
+
+export const IncrementBlogViews = async (blogId: string, userId: string, path: string) => {
   try {
     await dbConnect();
 
@@ -149,9 +190,28 @@ export const IncrementBlogViews = async (blogId: string, userId: string) => {
       { new: true } 
     );
 
+    if (path === "/") revalidatePath("/");
+    revalidatePath(path);
+
     return { status: "success", message: updatedBlog.views};
   } catch (error) {
     console.log("Error incrementing blog views:", error);
     return { status: "error", message: "Failed to increment blog views." };
   }
 };
+
+
+export const LogViews = async (blogId: string, path: string) => {
+  try {
+    await dbConnect()
+
+    await Blog.findByIdAndUpdate(blogId, { $inc: { notLoggedViews: 1 } }, { new: true });
+
+    if (path === "/") revalidatePath("/");
+    revalidatePath(path);
+
+  } catch (error) {
+    console.log("Error logging views:", error);
+    return { status: "error", message: "Failed to log views." };
+  }
+}
