@@ -12,7 +12,7 @@ interface BlogCommentsProps {
 const BlogComments = ({ userSession, blogId, comments, path }: BlogCommentsProps) => {
   const commentData = JSON.parse(comments).message;
 
-  const HandleBlogComment = async (e) => {
+  const HandleBlogComment = async (e:any) => {
     e.preventDefault();
     const commentText = e.target.userComment.value.trim();
 
