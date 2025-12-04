@@ -18,20 +18,21 @@ export const getSession = async () => {
       if (!cookie) return undefined;
       return { name: cookie.name, value: cookie.value };
     },
-    set: (name: string, value: string) => cookieStore.set(name, value),
-    remove: (name: string) => cookieStore.delete(name),
+
+    set: (name: string, value: string, options?: any) => {
+      cookieStore.set({
+        name,
+        value,
+        ...options,
+      });
+    },
+
+    remove: (name: string) => {
+      cookieStore.delete(name);
+    },
   };
 
-  const session = await getIronSession<SessionData>(
-    cookieHandler,
-    sessionOptions
-  );
-
-  if (!session.isLoggedIn) {
-    session.isLoggedIn = defaultSession.isLoggedIn;
-  }
-
-  return session;
+  return await getIronSession(cookieHandler as any, sessionOptions);
 };
 
 export const logout = async () => {
