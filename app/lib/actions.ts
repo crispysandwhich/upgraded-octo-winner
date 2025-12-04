@@ -89,7 +89,7 @@ export const HandleCredentialSignin = async (payload: any) => {
   }
 };
 
-export const HandleWalletSignin = async (payload) => {
+export const HandleWalletSignin = async (payload:any) => {
   const metaAddress = payload.metaAddress;
   const firstTime = payload.firstTime;
   const signature = payload.signature;

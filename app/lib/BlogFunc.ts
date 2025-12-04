@@ -41,7 +41,7 @@ export const GetBlogById = async (id: string) => {
   }
 };
 
-export const HandleCreateBlog = async (payload) => {
+export const HandleCreateBlog = async (payload:any) => {
   try {
     await dbConnect();
 
