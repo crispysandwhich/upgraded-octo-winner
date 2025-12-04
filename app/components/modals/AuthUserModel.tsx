@@ -1,6 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
+
 import { ethers } from "ethers";
 import { useState } from "react";
 import { toast } from "react-toastify";
