@@ -41,60 +41,68 @@ export const logout = async () => {
   redirect("/");
 };
 
+
 export const HandleCredentialSignin = async (payload: any) => {
-  const usersession = await getSession();
-  const email = payload.email;
-  const password = payload.password;
-  const firstTime = payload.firstTime;
+  const usersession = await getSession() as any;
+
+  const { email, password, firstTime } = payload;
+
   try {
     await dbConnect();
 
-    const currentUser = await User.find({ email }).lean();
+    let user = await User.findOne({ email }).lean();
 
-    if (currentUser.length === 0 && firstTime) {
-      const salt = await bcrypt.genSalt(10);
-      const hash = await bcrypt.hash(password, salt);
+    // REGISTER
+    if (!user && firstTime) {
+      const hash = await bcrypt.hash(password, 10);
 
-      const newUser = new User({
+      const newUser = await User.create({
         email,
         password: hash,
       });
 
+      // 🔥 Set session
       usersession.isLoggedIn = true;
       usersession.userId = newUser._id.toString();
       usersession.role = newUser.role;
 
-      await newUser.save();
       await usersession.save();
 
       revalidatePath("/");
       return { status: "success", message: "User created successfully" };
     }
 
-    const isMatch = await bcrypt.compare(password, currentUser[0].password);
+    // LOGIN
+    if (!user) {
+      return { status: "error", message: "User not found" };
+    }
 
-    if (!isMatch) {
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
       return { status: "error", message: "Invalid credentials" };
-    } else {
-      usersession.isLoggedIn = true;
-      usersession.userId = currentUser[0]._id.toString();
-      usersession.role = currentUser[0].role;
-      await usersession.save();
-
-      revalidatePath("/");
-      return { status: "success", message: "User created successfully" };
     }
+
+    // 🔥 Set session for existing user
+    usersession.isLoggedIn = true;
+    usersession.userId = user._id.toString();
+    usersession.role = user.role;
+
+    await usersession.save();
+
+    revalidatePath("/");
+    return { status: "success", message: "Logged in successfully" };
   } catch (error) {
     console.log("Error during credential signin:", error);
-    return { success: false, message: "Internal server error" };
+    return { status: "error", message: "Internal server error" };
   }
 };
+
 
 export const HandleWalletSignin = async (payload:any) => {
   const metaAddress = payload.metaAddress;
   const firstTime = payload.firstTime;
   const signature = payload.signature;
-  const usersession = await getSession();
+  const usersession = await getSession() as any;
   try {
     await dbConnect();
 
