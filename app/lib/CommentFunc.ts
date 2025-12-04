@@ -5,7 +5,7 @@ import Comment from "@/models/Comment";
 import Blog from "@/models/Blog";
 import { revalidatePath } from "next/cache";
 
-export const UploadComment = async (payload) => {
+export const UploadComment = async (payload:any) => {
   const { blogId, userId, content, path } = payload;
 
   try {
