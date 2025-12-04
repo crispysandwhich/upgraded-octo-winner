@@ -32,7 +32,7 @@ const CreateForm = ({userSession}: CreateFormProps) => {
     const handleAddCategory = () => {
       const newCats = categoryInput
         .split(/\s+/)
-        .map((c) => c.trim())
+        .map((c:any) => c.trim())
         .filter((c) => c.length > 0 && !categories.includes(c));
       setCategories([...categories, ...newCats]);
       setCategoryInput("");

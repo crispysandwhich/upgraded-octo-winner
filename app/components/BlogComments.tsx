@@ -91,7 +91,7 @@ const BlogComments = ({ userSession, blogId, comments, path }: BlogCommentsProps
     </div>
   )}
 
-  {commentData.map((c) => {
+  {commentData.map((c:any) => {
     const shortMeta =
       c.user?.metaAddress
         ? `${c.user.metaAddress.slice(0, 6)}...${c.user.metaAddress.slice(-4)}`

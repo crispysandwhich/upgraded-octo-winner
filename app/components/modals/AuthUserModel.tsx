@@ -8,8 +8,8 @@ import { useModal } from "@/app/hooks/use-modal-store";
 import { HandleCredentialSignin, HandleWalletSignin } from "@/app/lib/actions";
 
 export type AuthPayload = {
-  email?: string;
-  password?: string;
+  email?: string | null;
+  password?: string | null;
   metaAddress?: string | null;
   signature?: string | null;
   firstTime?: boolean;
