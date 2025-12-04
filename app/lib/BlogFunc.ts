@@ -96,8 +96,8 @@ export const LikeBlog = async (blogId: string, userId: string, path: string) => 
       return { status: "error", message: "Blog not found" };
     }
 
-    const alreadyLiked = blog.likes.some((id) => id.toString() === userId);
-    const alreadyDisliked = blog.dislikes.some((id) => id.toString() === userId);
+    const alreadyLiked = blog.likes.some((id:any) => id.toString() === userId);
+    const alreadyDisliked = blog.dislikes.some((id:any) => id.toString() === userId);
 
     let updateQuery: any = {};
 
@@ -142,8 +142,8 @@ export const DislikeBlog = async (blogId: string, userId: string, path: string) 
       return { status: "error", message: "Blog not found" };
     }
 
-    const alreadyDisliked = blog.dislikes.some((id) => id.toString() === userId);
-    const alreadyLiked = blog.likes.some((id) => id.toString() === userId);
+    const alreadyDisliked = blog.dislikes.some((id:any) => id.toString() === userId);
+    const alreadyLiked = blog.likes.some((id:any) => id.toString() === userId);
 
     let updateQuery: any = {};
 
